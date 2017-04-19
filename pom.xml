@@ -1,0 +1,50 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+   <modelVersion>4.0.0</modelVersion>
+   <groupId>picocog.core</groupId>
+   <artifactId>picocog</artifactId>
+   <version>0.1.0-SNAPSHOT</version>
+   <packaging>bundle</packaging>
+   <name>picocog</name>
+   <url></url>
+   <description>A tiny Java based code generation library.</description>
+   <properties>
+      <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+   </properties>
+   <build>
+      <plugins>
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+               <source>1.6</source>
+               <target>1.6</target>
+            </configuration>
+         </plugin>
+         <plugin>
+            <groupId>org.apache.felix</groupId>
+            <artifactId>maven-bundle-plugin</artifactId>
+            <version>2.0.1</version>
+            <extensions>true</extensions>
+         </plugin>
+
+      </plugins>
+   </build>
+   <dependencies>
+   		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.11</version>
+			<type>jar</type>
+			<scope>test</scope>
+			<optional>false</optional>
+		</dependency>
+   </dependencies>
+   <developers>
+      <developer>
+         <id>ainsleyc</id>
+         <name>Chris Ainsley</name>
+         <email>c.b.ainsley@gmail.com</email>
+      </developer>
+   </developers>
+   <inceptionYear>2016</inceptionYear>
+</project>

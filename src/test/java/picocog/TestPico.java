@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package picocog.core;
+package picocog;
 
 import junit.framework.TestCase;
-import picocog.core.PicoWriter;
+import picocog.PicoWriter;
 
 public class TestPico extends TestCase {
    

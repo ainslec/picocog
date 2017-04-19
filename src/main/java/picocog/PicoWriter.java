@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package picocog.core;
+package picocog;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,18 +24,14 @@ import java.util.List;
  */
 public class PicoWriter implements PicoWriterItem {
    private static final String      SEP                    = "\n";
-   private static final String      DEFAULT_INDENT_CHARS   = "   ";
-   private int                      _numIndents            = -1;
-   private int                      _numLinesWritten       = 0;
+   private static final String      DI                     = "   ";
+   private int                      _indents               = -1;
+   private int                      _numLines              = 0;
    private boolean                  _generateIfEmpty       = true;
    private boolean                  _isDirty               = false;
-   private List<PicoWriterItem>   _content                 = new ArrayList <PicoWriterItem>();
-   private StringBuilder            _currentLineSB         = new StringBuilder();
-   @SuppressWarnings("unused")
-   private int                      _currentLineNumber     = 0;
-   private String                   _indentChars           = DEFAULT_INDENT_CHARS;
-   //private int                      _withinThisBookmark    = -1;
-   //private boolean                  _withinBookmark        = false;
+   private List<PicoWriterItem>     _content               = new ArrayList <PicoWriterItem>();
+   private StringBuilder            _sb                    = new StringBuilder();
+   private String                   _ic  /* Indent chars*/ = DI;
 
    public static class IndentedLine implements PicoWriterItem {
       String _line;
@@ -49,34 +45,34 @@ public class PicoWriter implements PicoWriterItem {
       @Override public String toString() { return "IndentedLine [_line=" + _line + ", _indent=" + _indent + "]"; }
    }
    public PicoWriter () {
-      _numIndents = 0;
+      _indents = 0;
    }
    public PicoWriter (String indentText) {
-      _numIndents = 0;
-      _indentChars = indentText == null ? DEFAULT_INDENT_CHARS : indentText;
+      _indents = 0;
+      _ic = indentText == null ? DI : indentText;
    }
    private PicoWriter (int initialIndent, String indentText) {
-      _numIndents = initialIndent < 0 ? 0 : initialIndent;
-      _indentChars = indentText == null ? DEFAULT_INDENT_CHARS : indentText;
+      _indents = initialIndent < 0 ? 0 : initialIndent;
+      _ic = indentText == null ? DI : indentText;
    }
    public void indentRight() {
-      _numIndents++;
+      _indents++;
    }
    public void indentLeft() {
-      _numIndents--;
-      if (_numIndents < 0) {
+      _indents--;
+      if (_indents < 0) {
          throw new RuntimeException("Local indent cannot be less than zero");
       }
    }
 
    public final PicoWriter createDeferredWriter() {
-      if (_currentLineSB.length() > 0) {
+      if (_sb.length() > 0) {
          flush();
-         _numLinesWritten++;
+         _numLines++;
       }
-      PicoWriter inner = new PicoWriter(_numIndents, _indentChars);
+      PicoWriter inner = new PicoWriter(_indents, _ic);
       _content.add(inner);
-      _numLinesWritten++;
+      _numLines++;
       return inner;
    }
    public PicoWriter writeln_r(String string) {
@@ -96,33 +92,23 @@ public class PicoWriter implements PicoWriterItem {
       return this;
    }
    public PicoWriter writeln(String string) {
-      _numLinesWritten++;
-      _currentLineSB.append(string);
+      _numLines++;
+      _sb.append(string);
       flush();
       return this;
    }
    private void flush() {
-//      if (_withinBookmark) {
-//         _content.add(_currentLineNumber, new IndentedLine(_currentLineSB.toString(), _localIndent));
-//         // Shift forward future bookmarks
-//         for (int i=_withinThisBookmark+1; i < _bookmarks.size(); i++) {
-//            BookMark bm = _bookmarks.get(i);
-//            bm.shiftForwardDueToInsertionByEarlierBookmark();
-//         }
-//      } else {
-         _content.add(new IndentedLine(_currentLineSB.toString(), _numIndents));
-//      }
-      _currentLineNumber++;
-      _currentLineSB.setLength(0);
+      _content.add(new IndentedLine(_sb.toString(), _indents));
+      _sb.setLength(0);
       _isDirty = false;
    }
    public boolean isEmpty() {
-      return _numLinesWritten == 0;
+      return _numLines == 0;
    }
    public void write(String string)  {
-      _numLinesWritten++;
+      _numLines++;
       _isDirty = true;
-      _currentLineSB.append(string);
+      _sb.append(string);
    }
    private static final void writeIndentedLine(final StringBuilder sb, final int indentBase, final String indentText, final String line) {
       for (int indentIndex = 0; indentIndex < indentBase; indentIndex++) {
@@ -145,7 +131,7 @@ public class PicoWriter implements PicoWriterItem {
             IndentedLine il           = (IndentedLine)line;
             final String lineText     = il.getLine();
             final int indentLevelHere = indentBase + il.getIndent();
-            writeIndentedLine(sb, indentLevelHere, _indentChars, lineText);
+            writeIndentedLine(sb, indentLevelHere, _ic, lineText);
          } else {
             sb.append(line.toString());
          }
@@ -157,7 +143,7 @@ public class PicoWriter implements PicoWriterItem {
       return sb.toString();
    }
    public boolean isMethodBodyEmpty() {
-      return _content.size() == 0 && _currentLineSB.length() == 0;
+      return _content.size() == 0 && _sb.length() == 0;
    }
    public boolean isGenerateIfEmpty() {
       return _generateIfEmpty;
@@ -168,47 +154,4 @@ public class PicoWriter implements PicoWriterItem {
    public String toString() {
       return toString(0);
    }
-//   private static final void writeIndent(final StringBuilder sb, final int indentBase, final String indentText) {
-//      for (int i = 0; i < indentBase; i++) {
-//         sb.append(indentText);
-//      }
-//   }
-//
-   // private int                      _savedIndentForRestorationAfterExitingBookmark = _localIndent;
-//private List<BookMark>           _bookmarks             = new ArrayList <BookMark>();
-//   public class BookMark {
-//      int _indent   = 0;
-//      int _position = 0;
-//      public BookMark(int currentIndent, int currentPosition) {
-//         _indent   = currentIndent;
-//         _position = currentPosition;
-//      }
-//      public int getCurrentIndent()                             { return _indent; }
-//      public int getCurrentPosition()                           { return _position; }
-//      public void shiftForwardDueToInsertionByEarlierBookmark() { _position++; }
-//   }
-
-//   public int bookmark() {
-//      final BookMark bookmark = new BookMark(_localIndent, _currentLineNumber);
-//      _bookmarks.add(bookmark);
-//      return _bookmarks.size()-1;
-//   }
-//   public void enterBookmark(int id) {
-//      if (id < _bookmarks.size() && id >=0) {
-//         BookMark bookmark = _bookmarks.get(id);
-//         _withinBookmark = true;
-//         _savedIndentForRestorationAfterExitingBookmark = _localIndent;
-//         _localIndent = bookmark.getCurrentIndent();
-//         _currentLineNumber = bookmark.getCurrentPosition();
-//         _withinThisBookmark = id;
-//      } else {
-//         throw new RuntimeException("Specified bad bookmark index : " + id + " (base zero), number of bookmarks : " + _bookmarks.size());
-//      }
-//   }
-//   public void exitBookmark() {
-//      _currentLineNumber  = _content.size();
-//      _localIndent        = _savedIndentForRestorationAfterExitingBookmark;
-//      _withinBookmark     = false;
-//      _withinThisBookmark = -1;
-//   }
 }

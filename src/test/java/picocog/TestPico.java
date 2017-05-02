@@ -15,8 +15,9 @@
  */
 package picocog;
 
+import com.ainslec.picocog.PicoWriter;
+
 import junit.framework.TestCase;
-import picocog.PicoWriter;
 
 public class TestPico extends TestCase {
    

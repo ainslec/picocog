@@ -17,4 +17,4 @@
  * @author Chris Ainsley
  *
  */
-package com.ainslec.picocog;
+package org.ainslec.picocog;

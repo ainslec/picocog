@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package picocog;
+package org.ainslec.picocog;
 
-import com.ainslec.picocog.PicoWriter;
+import org.ainslec.picocog.PicoWriter;
 
 import junit.framework.TestCase;
 

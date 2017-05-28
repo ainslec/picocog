@@ -33,17 +33,6 @@ public class PicoWriter implements PicoWriterItem {
    private StringBuilder            _sb                    = new StringBuilder();
    private String                   _ic  /* Indent chars*/ = DI;
 
-   public static class IndentedLine implements PicoWriterItem {
-      String _line;
-      int    _indent;
-      public IndentedLine(String line, int indent) {
-         _line   = line;
-         _indent = indent;
-      }
-      public String getLine() { return _line; }
-      public int getIndent()  { return _indent; }
-      @Override public String toString() { return "IndentedLine [_line=" + _line + ", _indent=" + _indent + "]"; }
-   }
    public PicoWriter () {
       _indents = 0;
    }

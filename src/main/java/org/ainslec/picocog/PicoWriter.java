@@ -28,6 +28,7 @@ public class PicoWriter implements PicoWriterItem {
    private int                      _indents               = -1;
    private int                      _numLines              = 0;
    private boolean                  _generateIfEmpty       = true;
+   private boolean                  _generate              = true;
    private boolean                  _isDirty               = false;
    private List<PicoWriterItem>     _content               = new ArrayList <PicoWriterItem>();
    private StringBuilder            _sb                    = new StringBuilder();
@@ -111,7 +112,7 @@ public class PicoWriter implements PicoWriterItem {
          flush();
       }
       // Some methods are flagged not to be generated if there is no body text inside the method, we don't add these to the class narrative
-      if ((!isGenerateIfEmpty()) && isMethodBodyEmpty()) {
+      if ((!isGenerate()) || ((!isGenerateIfEmpty()) && isMethodBodyEmpty())) {
          return;
       }
        // TODO :: Will make this configurable
@@ -140,6 +141,15 @@ public class PicoWriter implements PicoWriterItem {
    public void setGenerateIfEmpty(boolean generateIfEmpty) {
       _generateIfEmpty  = generateIfEmpty;
    }
+   
+   public boolean isGenerate() {
+      return _generate;
+   }
+   
+   public void setGenerate(boolean generate) {
+      _generate = generate;
+   }
+   
    public String toString() {
       return toString(0);
    }

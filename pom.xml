@@ -4,9 +4,9 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.ainslec</groupId>
 	<artifactId>picocog</artifactId>
-	<version>1.0.1</version>
+	<version>1.0.2</version>
 	<packaging>jar</packaging>
-	<name>${project.groupId}:${project.artifactId}</name>
+	<name>Picocog</name>
 	<url>https://github.com/ainslec/picocog</url>
 	<description>A tiny Java-based code generation library.</description>
 

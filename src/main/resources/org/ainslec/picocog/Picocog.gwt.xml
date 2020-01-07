@@ -1,0 +1,9 @@
+<!--
+     To use this module in client-side GWT, compile
+     a jar with full source, and add the following line to your GWT Config:
+
+          <inherits name='org.ainslec.picocog.Picocog'/>
+-->
+<module>
+   <source path=""/>
+</module>

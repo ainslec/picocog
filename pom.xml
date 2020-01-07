@@ -1,82 +1,93 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-   <modelVersion>4.0.0</modelVersion>
-   <groupId>org.ainslec.picocog</groupId>
-   <artifactId>picocog</artifactId>
-   <version>1.0-SNAPSHOT</version>
-   <packaging>bundle</packaging>
-   <name>${project.groupId}:${project.artifactId}</name>
-   <url>https://github.com/ainslec/picocog</url>
-   <description>A tiny Java-based code generation library.</description>
-   <properties>
-      <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-   </properties>
-  <scm>
-    <url>https://github.com/ainslec/picocog/tree/master</url>
-    <connection>scm:git:git://github.com/ainslec/picocog.git</connection>
-	<developerConnection>scm:git:ssh://github.com/ainslec/picocog.git</developerConnection>
-	<tag>HEAD</tag>
-  </scm>
- 
-   <build>
-      <plugins>
-         <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <configuration>
-               <source>1.6</source>
-               <target>1.6</target>
-            </configuration>
-         </plugin>
-         <plugin>
-            <groupId>org.apache.felix</groupId>
-            <artifactId>maven-bundle-plugin</artifactId>
-            <extensions>true</extensions>
-         </plugin>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>org.ainslec</groupId>
+	<artifactId>picocog</artifactId>
+	<version>1.0.0</version>
+	<packaging>jar</packaging>
+	<name>${project.groupId}:${project.artifactId}</name>
+	<url>https://github.com/ainslec/picocog</url>
+	<description>A tiny Java-based code generation library.</description>
 
-		   <plugin>
-			<groupId>org.apache.maven.plugins</groupId>
-			<artifactId>maven-source-plugin</artifactId>
-			<executions>
-			 <execution>
-			  <id>attach-sources</id>
-			  <goals>
-			   <goal>jar-no-fork</goal>
-			  </goals>
-			 </execution>
-			</executions>
-		   </plugin>
-		   <plugin>
-			<groupId>org.apache.maven.plugins</groupId>
-			<artifactId>maven-javadoc-plugin</artifactId>
-			<executions>
-			 <execution>
-			  <id>attach-javadocs</id>
-			  <goals>
-			   <goal>jar</goal>
-			  </goals>
-			 </execution>
-			</executions>
-		   </plugin>
-		   
-		   
-		   <plugin>
-			<groupId>org.apache.maven.plugins</groupId>
-			<artifactId>maven-gpg-plugin</artifactId>
-			<executions>
-			 <execution>
-			  <id>sign-artifacts</id>
-			  <phase>verify</phase>
-			  <goals>
-			   <goal>sign</goal>
-			  </goals>
-			 </execution>
-			</executions>
-		   </plugin>
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
 
-      </plugins>
-   </build>
-   <dependencies>
-   		<dependency>
+	<scm>
+		<url>https://github.com/ainslec/picocog/tree/master</url>
+		<connection>scm:git:git://github.com/ainslec/picocog.git</connection>
+		<developerConnection>scm:git:ssh://github.com/ainslec/picocog.git</developerConnection>
+		<tag>HEAD</tag>
+	</scm>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>1.6</source>
+					<target>1.6</target>
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<goals>
+							<goal>jar-no-fork</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>attach-javadocs</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-gpg-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>sign-artifacts</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>sign</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<groupId>org.sonatype.plugins</groupId>
+				<artifactId>nexus-staging-maven-plugin</artifactId>
+				<version>1.6.7</version>
+				<extensions>true</extensions>
+				<configuration>
+					<serverId>ossrh</serverId>
+					<nexusUrl>https://oss.sonatype.org/</nexusUrl>
+					<autoReleaseAfterClose>true</autoReleaseAfterClose>
+				</configuration>
+			</plugin>
+
+		</plugins>
+	</build>
+	<dependencies>
+		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<version>4.11</version>
@@ -84,34 +95,38 @@
 			<scope>test</scope>
 			<optional>false</optional>
 		</dependency>
-   </dependencies>
-  <licenses>
-    <license>
-      <name>Apache License, Version 2.0</name>
-      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-    </license>
-  </licenses>
-   <developers>
-      <developer>
-         <id>ainslec</id>
-         <name>Chris Ainsley</name>
-         <email>c.b.ainsley@gmail.com</email>
-         <roles>
-            <role>creator</role>
-         </roles>
-      </developer>
-   </developers>
-   <inceptionYear>2016</inceptionYear>
- <distributionManagement>
-  <snapshotRepository>
-   <id>ossrh</id>
-   <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-  </snapshotRepository>
-  <repository>
-   <id>ossrh</id>
-   <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-  </repository>
- </distributionManagement>
+	</dependencies>
+	<licenses>
+		<license>
+			<name>Apache License, Version 2.0</name>
+			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+		</license>
+	</licenses>
+	<developers>
+		<developer>
+			<id>ainslec</id>
+			<name>Chris Ainsley</name>
+			<email>c.b.ainsley@gmail.com</email>
+			<roles>
+				<role>creator</role>
+			</roles>
+		</developer>
+	</developers>
+	<inceptionYear>2016</inceptionYear>
+
+	<distributionManagement>
+
+		<snapshotRepository>
+			<id>ossrh</id>
+			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
+		</snapshotRepository>
+
+		<repository>
+			<id>ossrh</id>
+			<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+		</repository>
+
+	</distributionManagement>
 
 
 </project>

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017, Chris Ainsley
+ * Copyright 2017 - 2020, Chris Ainsley
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ public class PicoWriter implements PicoWriterItem {
    private boolean                  _generateIfEmpty       = true;
    private boolean                  _generate              = true;
    private boolean                  _isDirty               = false;
+   private List<String[]>           _rows                  = new ArrayList<>(); // Used for aligning columns in the multi string writeln method.
    private List<PicoWriterItem>     _content               = new ArrayList <PicoWriterItem>();
    private StringBuilder            _sb                    = new StringBuilder();
    private String                   _ic  /* Indent chars*/ = DI;
@@ -71,11 +72,13 @@ public class PicoWriter implements PicoWriterItem {
       return this;
    }
    public PicoWriter writeln_l(String string) {
+      flushRows();
       indentLeft();
       writeln(string);
       return this;
    }
    public PicoWriter writeln_lr(String string) {
+      flushRows();
       indentLeft();
       writeln(string);
       indentRight();
@@ -87,11 +90,68 @@ public class PicoWriter implements PicoWriterItem {
       flush();
       return this;
    }
+   
+   /**
+    * Use this if you wish to align a series of columns
+    * @param strings An array of strings that should represent columns at the current indentation level.
+    * @return Returns the current instance of the {@link PicoWriter} object
+    */
+   public PicoWriter writeLn(String ... strings) {
+      _rows.add(strings);
+      _isDirty = true;
+      _numLines++;
+      return this;
+   }
+   
    private void flush() {
+      flushRows();
       _content.add(new IndentedLine(_sb.toString(), _indents));
       _sb.setLength(0);
       _isDirty = false;
    }
+   
+   private void flushRows() {
+      if (_rows.size() > 0) {
+         ArrayList<Integer> maxWidth = new ArrayList<>();
+         for (String[] columns : _rows) {
+            int numColumns = columns.length;
+            for (int i=0; i < numColumns; i++) {
+               String currentColumnStringValue = columns[i];
+               int currentColumnStringValueLength = currentColumnStringValue == null ? 0 : currentColumnStringValue.length();
+               if (maxWidth.size() < i+1) {
+                  maxWidth.add(currentColumnStringValueLength);
+               } else {
+                  if (maxWidth.get(i) < currentColumnStringValueLength) {
+                     maxWidth.set(i, currentColumnStringValueLength);
+                  }
+               }
+            }
+         }
+         
+         StringBuilder rowSB = new StringBuilder();
+         
+         for (String[] columns : _rows) {
+            int numColumns = columns.length;
+            for (int i=0; i < numColumns; i++) {
+               String currentColumnStringValue = columns[i];
+               int currentItemWidth = currentColumnStringValue == null ? 0 : currentColumnStringValue.length();
+               int maxWidth1 = maxWidth.get(i);
+               rowSB.append(currentColumnStringValue == null ? "" : currentColumnStringValue);
+               
+               if (currentItemWidth < maxWidth1) {
+                  for (int j=currentItemWidth; j < maxWidth1; j++) {
+                     rowSB.append(" "); // right pad
+                  }
+               }
+            }
+            _content.add(new IndentedLine(rowSB.toString(), _indents));
+            rowSB.setLength(0);
+         }
+         _rows.clear();
+      }
+   }
+
+
    public boolean isEmpty() {
       return _numLines == 0;
    }

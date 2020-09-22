@@ -57,15 +57,48 @@ public class PicoWriter implements PicoWriterItem {
    }
 
    public final PicoWriter createDeferredWriter() {
+      
       if (_sb.length() > 0) {
          flush();
          _numLines++;
       }
+      
       PicoWriter inner = new PicoWriter(_indents, _ic);
       _content.add(inner);
       _numLines++;
+      
       return inner;
    }
+   
+   public final PicoWriter writeln(PicoWriter inner) {
+      
+      if (_sb.length() > 0) {
+         flush();
+         _numLines++;
+      }
+      
+      adjustIndents(inner, this._indents, this._ic);
+      
+      _content.add(inner);
+      _numLines++;
+      
+      return this;
+   }
+   
+   private void adjustIndents(PicoWriter inner, int indents, String ic) {
+      if (inner != null) {
+         for ( PicoWriterItem item : inner._content) {
+            if (item instanceof PicoWriter) {
+               adjustIndents((PicoWriter) item, indents, ic);
+            } else if (item instanceof IndentedLine) {
+               IndentedLine il = (IndentedLine) item;
+               il._indent = il._indent + indents;
+            }
+         }
+         inner._ic = ic;
+      }
+   }
+   
    public PicoWriter writeln_r(String string) {
       writeln(string);
       indentRight();
@@ -96,7 +129,7 @@ public class PicoWriter implements PicoWriterItem {
     * @param strings An array of strings that should represent columns at the current indentation level.
     * @return Returns the current instance of the {@link PicoWriter} object
     */
-   public PicoWriter writeLn(String ... strings) {
+   public PicoWriter writeln(String ... strings) {
       _rows.add(strings);
       _isDirty = true;
       _numLines++;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 - 2020, Chris Ainsley
+ * Copyright 2017 - 2021, Chris Ainsley
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,17 +23,19 @@ import java.util.List;
  * @author Chris Ainsley
  */
 public class PicoWriter implements PicoWriterItem {
-   private static final String      SEP                    = "\n";
-   private static final String      DI                     = "   ";
-   private int                      _indents               = -1;
-   private int                      _numLines              = 0;
-   private boolean                  _generateIfEmpty       = true;
-   private boolean                  _generate              = true;
-   private boolean                  _isDirty               = false;
-   private List<String[]>           _rows                  = new ArrayList<>(); // Used for aligning columns in the multi string writeln method.
-   private List<PicoWriterItem>     _content               = new ArrayList <PicoWriterItem>();
-   private StringBuilder            _sb                    = new StringBuilder();
-   private String                   _ic  /* Indent chars*/ = DI;
+   private static final String      SEP                         = "\n";
+   private static final String      DI                          = "   ";
+   private int                      _indents                    = -1;
+   private int                      _numLines                   = 0;
+   private boolean                  _generateIfEmpty            = true;
+   private boolean                  _generate                   = true;
+   boolean                          _normalizeAdjacentBlankRows = false;
+   
+   private boolean                  _isDirty                    = false;
+   private List<String[]>           _rows                       = new ArrayList<>(); // Used for aligning columns in the multi string writeln method.
+   private List<PicoWriterItem>     _content                    = new ArrayList <PicoWriterItem>();
+   private StringBuilder            _sb                         = new StringBuilder();
+   private String                   _ic  /* Indent chars*/      = DI;
 
    public PicoWriter () {
       _indents = 0;
@@ -47,9 +49,11 @@ public class PicoWriter implements PicoWriterItem {
       _ic = indentText == null ? DI : indentText;
    }
    public void indentRight() {
+      flushRows();
       _indents++;
    }
    public void indentLeft() {
+      flushRows();
       _indents--;
       if (_indents < 0) {
          throw new RuntimeException("Local indent cannot be less than zero");
@@ -104,12 +108,14 @@ public class PicoWriter implements PicoWriterItem {
       indentRight();
       return this;
    }
+   
    public PicoWriter writeln_l(String string) {
       flushRows();
       indentLeft();
       writeln(string);
       return this;
    }
+   
    public PicoWriter writeln_lr(String string) {
       flushRows();
       indentLeft();
@@ -117,6 +123,7 @@ public class PicoWriter implements PicoWriterItem {
       indentRight();
       return this;
    }
+   
    public PicoWriter writeln(String string) {
       _numLines++;
       _sb.append(string);
@@ -134,6 +141,80 @@ public class PicoWriter implements PicoWriterItem {
       _isDirty = true;
       _numLines++;
       return this;
+   }
+   
+   public boolean isEmpty() {
+      return _numLines == 0;
+   }
+   
+   public void write(String string)  {
+      _numLines++;
+      _isDirty = true;
+      _sb.append(string);
+   }
+   
+   private static final void writeIndentedLine(final StringBuilder sb, final int indentBase, final String indentText, final String line) {
+      for (int indentIndex = 0; indentIndex < indentBase; indentIndex++) {
+         sb.append(indentText);
+      }
+      sb.append(line);
+      sb.append(SEP);
+   }
+   
+   private boolean render(StringBuilder sb, int indentBase, boolean normalizeAdjacentBlankRows, boolean lastRowWasBlank) {
+      
+      if (_isDirty) {
+         flush();
+      }
+      
+      // Some methods are flagged not to be generated if there is no body text inside the method, we don't add these to the class narrative
+      if ((!isGenerate()) || ((!isGenerateIfEmpty()) && isMethodBodyEmpty())) {
+         return lastRowWasBlank;
+      }
+       // TODO :: Will make this configurable
+      for (PicoWriterItem item : _content) {
+         if (item instanceof IndentedLine) {
+            IndentedLine il           = (IndentedLine)item;
+            final String lineText     = il.getLine();
+            final int indentLevelHere = indentBase + il.getIndent();
+            boolean thisRowIsBlank    = lineText.length() == 0;
+
+            if (normalizeAdjacentBlankRows && lastRowWasBlank && thisRowIsBlank) {
+               // Don't write the line if we already had a blank line
+            } else {
+               writeIndentedLine(sb, indentLevelHere, _ic, lineText);
+            }
+            
+            lastRowWasBlank = thisRowIsBlank;
+         } else if (item instanceof PicoWriter) {
+            lastRowWasBlank = ((PicoWriter)item).render(sb, indentBase, normalizeAdjacentBlankRows, lastRowWasBlank);
+         } else {
+            String string = item.toString();
+            sb.append(string);
+         }
+      }
+      
+      return lastRowWasBlank;
+   }
+
+   public boolean isMethodBodyEmpty() {
+      return _content.size() == 0 && _sb.length() == 0;
+   }
+   
+   public boolean isGenerateIfEmpty() {
+      return _generateIfEmpty;
+   }
+   
+   public void setGenerateIfEmpty(boolean generateIfEmpty) {
+      _generateIfEmpty  = generateIfEmpty;
+   }
+   
+   public boolean isGenerate() {
+      return _generate;
+   }
+   
+   public void setGenerate(boolean generate) {
+      _generate = generate;
    }
    
    private void flush() {
@@ -183,64 +264,16 @@ public class PicoWriter implements PicoWriterItem {
          _rows.clear();
       }
    }
+   
 
-
-   public boolean isEmpty() {
-      return _numLines == 0;
+   public void setNormalizeAdjacentBlankRows(boolean normalizeAdjacentBlankRows) {
+      _normalizeAdjacentBlankRows = normalizeAdjacentBlankRows;
    }
-   public void write(String string)  {
-      _numLines++;
-      _isDirty = true;
-      _sb.append(string);
-   }
-   private static final void writeIndentedLine(final StringBuilder sb, final int indentBase, final String indentText, final String line) {
-      for (int indentIndex = 0; indentIndex < indentBase; indentIndex++) {
-         sb.append(indentText);
-      }
-      sb.append(line);
-      sb.append(SEP);
-   }
-   private void render(StringBuilder sb, int indentBase) {
-      if (_isDirty) {
-         flush();
-      }
-      // Some methods are flagged not to be generated if there is no body text inside the method, we don't add these to the class narrative
-      if ((!isGenerate()) || ((!isGenerateIfEmpty()) && isMethodBodyEmpty())) {
-         return;
-      }
-       // TODO :: Will make this configurable
-      for (PicoWriterItem line : _content) {
-         if (line instanceof IndentedLine) {
-            IndentedLine il           = (IndentedLine)line;
-            final String lineText     = il.getLine();
-            final int indentLevelHere = indentBase + il.getIndent();
-            writeIndentedLine(sb, indentLevelHere, _ic, lineText);
-         } else {
-            sb.append(line.toString());
-         }
-      }
-   }
+   
    public String toString(int indentBase) {
       StringBuilder sb = new StringBuilder();
-      render(sb, indentBase);
+      render(sb, indentBase, _normalizeAdjacentBlankRows, false /* lastRowWasBlank */);
       return sb.toString();
-   }
-   public boolean isMethodBodyEmpty() {
-      return _content.size() == 0 && _sb.length() == 0;
-   }
-   public boolean isGenerateIfEmpty() {
-      return _generateIfEmpty;
-   }
-   public void setGenerateIfEmpty(boolean generateIfEmpty) {
-      _generateIfEmpty  = generateIfEmpty;
-   }
-   
-   public boolean isGenerate() {
-      return _generate;
-   }
-   
-   public void setGenerate(boolean generate) {
-      _generate = generate;
    }
    
    public String toString() {

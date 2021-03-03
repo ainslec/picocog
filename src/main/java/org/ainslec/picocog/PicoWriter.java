@@ -24,7 +24,7 @@ import java.util.List;
  */
 public class PicoWriter implements PicoWriterItem {
    private static final String      SEP                         = "\n";
-   private static final String      DI                          = "   ";
+   private static final String      DI                          = "   " ;
    private int                      _indents                    = -1;
    private int                      _numLines                   = 0;
    private boolean                  _generateIfEmpty            = true;
@@ -35,7 +35,7 @@ public class PicoWriter implements PicoWriterItem {
    private List<String[]>           _rows                       = new ArrayList<>(); // Used for aligning columns in the multi string writeln method.
    private List<PicoWriterItem>     _content                    = new ArrayList <PicoWriterItem>();
    private StringBuilder            _sb                         = new StringBuilder();
-   private String                   _ic  /* Indent chars*/      = DI;
+   private String                   _ic   /* Indent chars*/     = DI;
 
    public PicoWriter () {
       _indents = 0;

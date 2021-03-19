@@ -143,6 +143,24 @@ public class PicoWriter implements PicoWriterItem {
       return this;
    }
    
+   /**
+    * Writest a line, then returns a li
+    * @param startLine
+    * @param endLine
+    * @return
+    */
+   public PicoWriter createDeferredIndentedWriter(String startLine, String endLine) {
+      writeln(startLine);
+      indentRight();
+      PicoWriter ggg = createDeferredWriter();
+      indentLeft();
+      writeln(endLine);
+      _isDirty = true;
+      _numLines+=2;
+      return ggg;
+   }
+   
+   
    public boolean isEmpty() {
       return _numLines == 0;
    }
@@ -279,4 +297,6 @@ public class PicoWriter implements PicoWriterItem {
    public String toString() {
       return toString(0);
    }
+   
+   
 }

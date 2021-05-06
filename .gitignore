@@ -1,5 +1,11 @@
+.idea
+.eclipse
 target/
 bin/
 $*
 *.releaseBackup
 release.properties
+.settings
+.classpath
+.project
+picocog.iml

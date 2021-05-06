@@ -19,284 +19,276 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * A tiny code generation library
+ * A simple writer class that allows for easy indentation, designed to be used for generating source code.
+ *
  * @author Chris Ainsley
  */
-public class PicoWriter implements PicoWriterItem {
-   private static final String      SEP                         = "\n";
-   private static final String      DI                          = "   " ;
-   private int                      _indents                    = -1;
-   private int                      _numLines                   = 0;
-   private boolean                  _generateIfEmpty            = true;
-   private boolean                  _generate                   = true;
-   boolean                          _normalizeAdjacentBlankRows = false;
-   
-   private boolean                  _isDirty                    = false;
-   private List<String[]>           _rows                       = new ArrayList<>(); // Used for aligning columns in the multi string writeln method.
-   private List<PicoWriterItem>     _content                    = new ArrayList <PicoWriterItem>();
-   private StringBuilder            _sb                         = new StringBuilder();
-   private String                   _ic   /* Indent chars*/     = DI;
+@SuppressWarnings({"unused", "UnusedReturnValue"})
+public class PicoWriter implements Item {
+	private static final String SEP = "\n";
+	private static final String TAB = "    ";
 
-   public PicoWriter () {
-      _indents = 0;
-   }
-   public PicoWriter (String indentText) {
-      _indents = 0;
-      _ic = indentText == null ? DI : indentText;
-   }
-   private PicoWriter (int initialIndent, String indentText) {
-      _indents = initialIndent < 0 ? 0 : initialIndent;
-      _ic = indentText == null ? DI : indentText;
-   }
-   public void indentRight() {
-      flushRows();
-      _indents++;
-   }
-   public void indentLeft() {
-      flushRows();
-      _indents--;
-      if (_indents < 0) {
-         throw new RuntimeException("Local indent cannot be less than zero");
-      }
-   }
+	private int indents = 0;
+	private int lines = 0;
+	private boolean generateIfEmpty = true;
+	private boolean generate = true;
+	private boolean normalize = false;
 
-   public final PicoWriter createDeferredWriter() {
-      
-      if (_sb.length() > 0) {
-         flush();
-         _numLines++;
-      }
-      
-      PicoWriter inner = new PicoWriter(_indents, _ic);
-      _content.add(inner);
-      _numLines++;
-      
-      return inner;
-   }
-   
-   public final PicoWriter writeln(PicoWriter inner) {
-      
-      if (_sb.length() > 0) {
-         flush();
-         _numLines++;
-      }
-      
-      adjustIndents(inner, this._indents, this._ic);
-      
-      _content.add(inner);
-      _numLines++;
-      
-      return this;
-   }
-   
-   private void adjustIndents(PicoWriter inner, int indents, String ic) {
-      if (inner != null) {
-         for ( PicoWriterItem item : inner._content) {
-            if (item instanceof PicoWriter) {
-               adjustIndents((PicoWriter) item, indents, ic);
-            } else if (item instanceof IndentedLine) {
-               IndentedLine il = (IndentedLine) item;
-               il._indent = il._indent + indents;
-            }
-         }
-         inner._ic = ic;
-      }
-   }
-   
-   public PicoWriter writeln_r(String string) {
-      writeln(string);
-      indentRight();
-      return this;
-   }
-   
-   public PicoWriter writeln_l(String string) {
-      flushRows();
-      indentLeft();
-      writeln(string);
-      return this;
-   }
-   
-   public PicoWriter writeln_lr(String string) {
-      flushRows();
-      indentLeft();
-      writeln(string);
-      indentRight();
-      return this;
-   }
-   
-   public PicoWriter writeln(String string) {
-      _numLines++;
-      _sb.append(string);
-      flush();
-      return this;
-   }
-   
-   /**
-    * Use this if you wish to align a series of columns
-    * @param strings An array of strings that should represent columns at the current indentation level.
-    * @return Returns the current instance of the {@link PicoWriter} object
-    */
-   public PicoWriter writeln(String ... strings) {
-      _rows.add(strings);
-      _isDirty = true;
-      _numLines++;
-      return this;
-   }
-   
-   /**
-    * Writest a line, then returns a li
-    * @param startLine
-    * @param endLine
-    * @return
-    */
-   public PicoWriter createDeferredIndentedWriter(String startLine, String endLine) {
-      writeln(startLine);
-      indentRight();
-      PicoWriter ggg = createDeferredWriter();
-      indentLeft();
-      writeln(endLine);
-      _isDirty = true;
-      _numLines+=2;
-      return ggg;
-   }
-   
-   
-   public boolean isEmpty() {
-      return _numLines == 0;
-   }
-   
-   public void write(String string)  {
-      _numLines++;
-      _isDirty = true;
-      _sb.append(string);
-   }
-   
-   private static final void writeIndentedLine(final StringBuilder sb, final int indentBase, final String indentText, final String line) {
-      for (int indentIndex = 0; indentIndex < indentBase; indentIndex++) {
-         sb.append(indentText);
-      }
-      sb.append(line);
-      sb.append(SEP);
-   }
-   
-   private boolean render(StringBuilder sb, int indentBase, boolean normalizeAdjacentBlankRows, boolean lastRowWasBlank) {
-      
-      if (_isDirty) {
-         flush();
-      }
-      
-      // Some methods are flagged not to be generated if there is no body text inside the method, we don't add these to the class narrative
-      if ((!isGenerate()) || ((!isGenerateIfEmpty()) && isMethodBodyEmpty())) {
-         return lastRowWasBlank;
-      }
-       // TODO :: Will make this configurable
-      for (PicoWriterItem item : _content) {
-         if (item instanceof IndentedLine) {
-            IndentedLine il           = (IndentedLine)item;
-            final String lineText     = il.getLine();
-            final int indentLevelHere = indentBase + il.getIndent();
-            boolean thisRowIsBlank    = lineText.length() == 0;
+	private boolean dirty = false;
+	private final List<String[]> rows = new ArrayList<>();
+	private final List<Item> content = new ArrayList<>();
+	private final StringBuilder sb = new StringBuilder();
+	private String indent = TAB;
 
-            if (normalizeAdjacentBlankRows && lastRowWasBlank && thisRowIsBlank) {
-               // Don't write the line if we already had a blank line
-            } else {
-               writeIndentedLine(sb, indentLevelHere, _ic, lineText);
-            }
-            
-            lastRowWasBlank = thisRowIsBlank;
-         } else if (item instanceof PicoWriter) {
-            lastRowWasBlank = ((PicoWriter)item).render(sb, indentBase, normalizeAdjacentBlankRows, lastRowWasBlank);
-         } else {
-            String string = item.toString();
-            sb.append(string);
-         }
-      }
-      
-      return lastRowWasBlank;
-   }
+	public PicoWriter() {}
 
-   public boolean isMethodBodyEmpty() {
-      return _content.size() == 0 && _sb.length() == 0;
-   }
-   
-   public boolean isGenerateIfEmpty() {
-      return _generateIfEmpty;
-   }
-   
-   public void setGenerateIfEmpty(boolean generateIfEmpty) {
-      _generateIfEmpty  = generateIfEmpty;
-   }
-   
-   public boolean isGenerate() {
-      return _generate;
-   }
-   
-   public void setGenerate(boolean generate) {
-      _generate = generate;
-   }
-   
-   private void flush() {
-      flushRows();
-      _content.add(new IndentedLine(_sb.toString(), _indents));
-      _sb.setLength(0);
-      _isDirty = false;
-   }
-   
-   private void flushRows() {
-      if (_rows.size() > 0) {
-         ArrayList<Integer> maxWidth = new ArrayList<>();
-         for (String[] columns : _rows) {
-            int numColumns = columns.length;
-            for (int i=0; i < numColumns; i++) {
-               String currentColumnStringValue = columns[i];
-               int currentColumnStringValueLength = currentColumnStringValue == null ? 0 : currentColumnStringValue.length();
-               if (maxWidth.size() < i+1) {
-                  maxWidth.add(currentColumnStringValueLength);
-               } else {
-                  if (maxWidth.get(i) < currentColumnStringValueLength) {
-                     maxWidth.set(i, currentColumnStringValueLength);
-                  }
-               }
-            }
-         }
-         
-         StringBuilder rowSB = new StringBuilder();
-         
-         for (String[] columns : _rows) {
-            int numColumns = columns.length;
-            for (int i=0; i < numColumns; i++) {
-               String currentColumnStringValue = columns[i];
-               int currentItemWidth = currentColumnStringValue == null ? 0 : currentColumnStringValue.length();
-               int maxWidth1 = maxWidth.get(i);
-               rowSB.append(currentColumnStringValue == null ? "" : currentColumnStringValue);
-               
-               if (currentItemWidth < maxWidth1) {
-                  for (int j=currentItemWidth; j < maxWidth1; j++) {
-                     rowSB.append(" "); // right pad
-                  }
-               }
-            }
-            _content.add(new IndentedLine(rowSB.toString(), _indents));
-            rowSB.setLength(0);
-         }
-         _rows.clear();
-      }
-   }
-   
+	public PicoWriter(String indentText) {
+		indent = indentText == null ? TAB : indentText;
+	}
 
-   public void setNormalizeAdjacentBlankRows(boolean normalizeAdjacentBlankRows) {
-      _normalizeAdjacentBlankRows = normalizeAdjacentBlankRows;
-   }
-   
-   public String toString(int indentBase) {
-      StringBuilder sb = new StringBuilder();
-      render(sb, indentBase, _normalizeAdjacentBlankRows, false /* lastRowWasBlank */);
-      return sb.toString();
-   }
-   
-   public String toString() {
-      return toString(0);
-   }
-   
-   
+	private PicoWriter(int initialIndent, String indentText) {
+		indents = Math.max(initialIndent, 0);
+		indent = indentText == null ? TAB : indentText;
+	}
+
+	public void indentRight() {
+		flushRows();
+		indents++;
+	}
+
+	public void indentLeft() {
+		flushRows();
+		indents--;
+		if (indents < 0)
+			throw new RuntimeException("Local indent cannot be less than zero");
+	}
+
+	public final PicoWriter createDeferredWriter() {
+		if (sb.length() > 0) {
+			flush();
+			lines++;
+		}
+		final PicoWriter inner = new PicoWriter(indents, indent);
+		content.add(inner);
+		lines++;
+		return inner;
+	}
+
+	public final PicoWriter writeln(PicoWriter inner) {
+		if (sb.length() > 0) {
+			flush();
+			lines++;
+		}
+		adjustIndents(inner, this.indents, this.indent);
+		content.add(inner);
+		lines++;
+		return this;
+	}
+
+	private void adjustIndents(PicoWriter inner, int indents, String indent) {
+		if (inner != null) {
+			for (Item item : inner.content)
+				if (item instanceof PicoWriter)
+					adjustIndents((PicoWriter) item, indents, indent);
+				else if (item instanceof Line) {
+					final Line line = (Line) item;
+					line.indent = line.indent + indents;
+				}
+			inner.indent = indent;
+		}
+	}
+
+	public PicoWriter writeln_r(String string) {
+		writeln(string);
+		indentRight();
+		return this;
+	}
+
+	public PicoWriter writeln_l(String string) {
+		flushRows();
+		indentLeft();
+		writeln(string);
+		return this;
+	}
+
+	public PicoWriter writeln_lr(String string) {
+		flushRows();
+		indentLeft();
+		writeln(string);
+		indentRight();
+		return this;
+	}
+
+	public PicoWriter writeln(String string) {
+		lines++;
+		sb.append(string);
+		flush();
+		return this;
+	}
+
+	/**
+	 * Writes multiple strings.
+	 * 
+	 * @param strings string array representing columns at the current indentation level
+	 * @return the current instance of the {@link PicoWriter} object
+	 */
+	public PicoWriter writeln(String... strings) {
+		rows.add(strings);
+		dirty = true;
+		lines++;
+		return this;
+	}
+
+	/**
+	 * Writes a line, indents, then creates a new deferred writer 
+	 * before returning to the previous indent level.
+	 * 
+	 * @param start line before indentation
+	 * @param end line after indentation
+	 * @return a deferred writer that has been indented
+	 */
+	public PicoWriter indentDeferredWriter(String start, String end) {
+		writeln(start);
+		indentRight();
+		PicoWriter inner = createDeferredWriter();
+		indentLeft();
+		writeln(end);
+		dirty = true;
+		lines += 2;
+		return inner;
+	}
+
+	public boolean isEmpty() {
+		return lines == 0;
+	}
+
+	public void write(String string)  {
+		lines++;
+		dirty = true;
+		sb.append(string);
+	}
+
+	private static void writeIndentedLine(StringBuilder sb, int indentBase, String indentText, String line) {
+		for (int indentIndex = 0; indentIndex < indentBase; indentIndex++)
+			sb.append(indentText);
+		sb.append(line);
+		sb.append(SEP);
+	}
+
+	private boolean render(StringBuilder sb, int base, boolean normalize, boolean blank) {
+		if (dirty) flush();
+		if (!isGenerate() || (!isGenerateIfEmpty() && isMethodBodyEmpty()))
+			return blank;
+
+		// TODO :: Will make this configurable
+		for (Item item : content) {
+			if (item instanceof Line) {
+				final Line line = (Line) item;
+				final String text = line.text;
+				final int level = base + line.indent;
+				final boolean currentBlank = text.length() == 0;
+
+				if (!normalize && !blank && !currentBlank)
+					writeIndentedLine(sb, level, indent, text);
+				blank = currentBlank;
+			}
+			else if (item instanceof PicoWriter)
+				blank = ((PicoWriter) item).render(
+						sb, base, 
+						normalize, blank
+				);
+			else
+				sb.append(item.toString());
+		}
+		return blank;
+	}
+
+	public boolean isMethodBodyEmpty() {
+		return content.size() == 0 && sb.length() == 0;
+	}
+
+	public boolean isGenerateIfEmpty() {
+		return generateIfEmpty;
+	}
+
+	public void setGenerateIfEmpty(boolean generateIfEmpty) {
+		this.generateIfEmpty  = generateIfEmpty;
+	}
+
+	public boolean isGenerate() {
+		return generate;
+	}
+
+	public void setGenerate(boolean generate) {
+		this.generate = generate;
+	}
+
+	private void flush() {
+		flushRows();
+		content.add(new Line(sb.toString(), indents));
+		sb.setLength(0);
+		dirty = false;
+	}
+
+	private void flushRows() {
+		if (rows.size() > 0) {
+			final ArrayList<Integer> maxes = new ArrayList<>();
+			for (String[] columns : rows)
+				for (int i = 0; i < columns.length; i++) {
+					final String value = columns[i];
+					final int length = value == null ? 0 : value.length();
+					if (maxes.size() < i + 1)
+						maxes.add(length);
+					else if (maxes.get(i) < length)
+						maxes.set(i, length);
+				}
+
+			final StringBuilder sb = new StringBuilder();
+
+			for (String[] columns : rows) {
+				for (int i=0; i < columns.length; i++) {
+					final String value = columns[i];
+					final int width = value == null ? 0 : value.length();
+					final int max = maxes.get(i);
+					sb.append(value == null ? "" : value);
+
+					if (width < max)
+						for (int j = width; j < max; j++)
+							sb.append(" "); // right pad
+				}
+				content.add(new Line(sb.toString(), indents));
+				sb.setLength(0);
+			}
+			rows.clear();
+		}
+	}
+
+	public void setNormalize(boolean normalize) {
+		this.normalize = normalize;
+	}
+
+	public String toString(int indentBase) {
+		final StringBuilder sb = new StringBuilder();
+		render(sb, indentBase, normalize, false);
+		return sb.toString();
+	}
+
+	public String toString() {
+		return toString(0);
+	}
+
+	private static class Line implements Item {
+		private final String text;
+		private int indent;
+
+		public Line(String text, int indent) {
+			this.text = text;
+			this.indent = indent;
+		}
+
+		@Override
+		public String toString() {
+			return indent + ":" + text;
+		}
+	}
 }

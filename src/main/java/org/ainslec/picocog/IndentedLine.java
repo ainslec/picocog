@@ -21,13 +21,13 @@ package org.ainslec.picocog;
  *
  */
 public class IndentedLine implements PicoWriterItem {
-   String _line;
-   int    _indent;
+   String line;
+   int    indent;
    public IndentedLine(String line, int indent) {
-      _line   = line;
-      _indent = indent;
+      this.line   = line;
+      this.indent = indent;
    }
-   public String getLine() { return _line; }
-   public int getIndent()  { return _indent; }
-   @Override public String toString() { return _indent + ":" + _line; }
+   public String getLine() { return line; }
+   public int getIndent()  { return indent; }
+   @Override public String toString() { return indent + ":" + line; }
 }
